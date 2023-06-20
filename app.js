@@ -1,16 +1,26 @@
 const express = require('express')
 const app = express()
-require('dotenv').config();
 
-const tasks = require('./Routes/tasks')
+require('dotenv').config();
+require('express-async-errors');
+
+const auth = require('./Routes/auth')
+const jobs = require('./Routes/jobs')
 
 const connectdb = require('./db/connect')
+
+const authmiddle = require('./Middleware/auth')
+
+app.get('/hello',(req,res)=>{
+    res.send('Hello')
+})
 
 //middleware
 app.use(express.json())
 
 //route
-app.use('/api/v1/jwt',tasks)
+app.use('/api/v1/auth',auth)
+app.use('/api/v1/jobs',authmiddle,jobs)
 
 const port = process.env.port || 3000
 

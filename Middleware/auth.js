@@ -9,8 +9,8 @@ const authmiddle = async (req,res,next) => {
 
     try {
         const decoded = jwt.verify(code,process.env.jwt_key)
-        const {name} = decoded
-        req.user = {name}
+        const {name,userid} = decoded
+        req.user = {name,userid}
         next()
         
     } catch (error) {
