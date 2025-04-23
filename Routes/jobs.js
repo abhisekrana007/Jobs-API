@@ -1,10 +1,40 @@
-const express = require('express')
-const router = express.Router()
+const express = require('express');
+const router = express.Router();
+const authmiddle = require('../Middleware/auth');
 
-const {getAllJobs,getJob,createJob,deleteJob,updateJob} = require('../Controllers/jobs')
-// const authmiddle = require('../Middleware/auth')
+// Import controller middleware arrays
+const {
+  getAllMyJobs,
+  getJob,
+  createJob,
+  deleteJob,
+  updateJob
+} = require('../Controllers/jobsCreator');
 
-router.route('/').get(getAllJobs).post(createJob)
-router.route('/:id').get(getJob).patch(updateJob).delete(deleteJob)
+const {
+  getPublicJobs,
+  applyForJob,
+  getApplicants
+} = require('../Controllers/jobsApplier');
 
-module.exports = router
+// Job Management Routes (all require auth)
+router.route('/')
+  .get(authmiddle, ...getAllMyJobs)
+  .post(authmiddle, ...createJob);
+
+router.get('/public', ...getPublicJobs);
+
+router.route('/:id')
+  .get(authmiddle, ...getJob)
+  .patch(authmiddle, ...updateJob)
+  .delete(authmiddle, ...deleteJob);
+
+
+
+router.route('/:id/apply')
+  .post(authmiddle, ...applyForJob); // Requires auth to apply
+
+router.route('/:id/applicants')
+  .get(authmiddle, ...getApplicants); // Requires auth to view applicants
+
+module.exports = router;

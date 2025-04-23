@@ -6,28 +6,31 @@ require('express-async-errors');
 
 const auth = require('./Routes/auth')
 const jobs = require('./Routes/jobs')
-
 const connectdb = require('./db/connect')
 
-const authmiddle = require('./Middleware/auth')
-
-app.get('/hello',(req,res)=>{
+app.get('/hello', (req, res) => {
     res.send('Hello')
 })
 
 //middleware
 app.use(express.json())
 
+// Add to app.js before your routes
+// app.use((req, res, next) => {
+//     res.locals.redisAvailable = redis.status === 'ready';
+//     next();
+// });
+
 //route
-app.use('/api/v1/auth',auth)
-app.use('/api/v1/jobs',authmiddle,jobs)
+app.use('/api/v1/auth', auth)
+app.use('/api/v1/jobs', jobs)
 
 const port = process.env.port || 3000
 
-const start = async () =>{
+const start = async () => {
     try {
         await connectdb(process.env.connectstring)
-        app.listen(port,console.log(`Server is Listening on port ${port}...`))
+        app.listen(port, console.log(`Server is Listening on port ${port}...`))
     } catch (error) {
         console.log(error)
     }

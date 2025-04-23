@@ -1,21 +1,30 @@
-const jwt = require('jsonwebtoken')
+const jwt = require('jsonwebtoken');
 
-const authmiddle = async (req,res,next) => {
-    const decode = req.headers.authorization
-    if(!decode || !decode.startsWith('Bearer ')){
-        res.status(401).json({msg : 'Not Authorized'})
+const authMiddleware = async (req, res, next) => {
+    
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'No token provided' });
     }
-    const code = decode.split(' ')[1]
+
+    const token = authHeader.split(' ')[1];
 
     try {
-        const decoded = jwt.verify(code,process.env.jwt_key)
-        const {name,userid} = decoded
-        req.user = {name,userid}
-        next()
-        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = {
+            userId: decoded.userId, // Standardized to userId
+            name: decoded.name,
+            email: decoded.email // Added if needed for future use
+        };
+        next();
     } catch (error) {
-        res.status(401).json({msg : 'Bad token'})
+        // Specific error messages for development, generic for production
+        const message = process.env.NODE_ENV === 'production'
+            ? 'Authentication invalid'
+            : error.message;
+        return res.status(401).json({ error: message });
     }
-}
+};
 
-module.exports = authmiddle
+module.exports = authMiddleware;

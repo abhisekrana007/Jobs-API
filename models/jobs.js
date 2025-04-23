@@ -1,34 +1,55 @@
-const mongoose = require('mongoose')
-const jwt = require('jsonwebtoken')
+const mongoose = require('mongoose');
 
-const JobSchema = new mongoose.Schema(
-    {
-        company : {
-            type : String,
-            required : [true,'Must provide a company'],
-            trim : true,
-            maxlength : 20,
-        },
-        position : {
-            type: String,
-            trim: true,
-            required: [true,'Position of the job is required'],
-        },
-        status : {
-            type : String,
-            required : [true,'Must provide a passowrd'],
-            enum : ['interview','pending','declined'],
-            default : 'pending'
-        },
-        createdby : {
-            type : mongoose.Types.ObjectId,
-            ref : 'User',
-            required : [true,'Provide a User']
-        }
-    },
-    {
-        timestamps : true
-    }
-)
+const ApplicationSchema = new mongoose.Schema({
+  userId: {
+    type: mongoose.Types.ObjectId,
+    ref: 'User',
+    required: true
+  },
+  appliedAt: {
+    type: Date,
+    default: Date.now
+  }
+});
 
-module.exports = mongoose.model('Job', JobSchema)
+const JobSchema = new mongoose.Schema({
+  title: {
+    type: String,
+    required: [true, 'Job title is required'],
+    trim: true,
+    maxlength: 100
+  },
+  company: {
+    type: String,
+    required: [true, 'Company name is required'],
+    trim: true,
+    maxlength: 50
+  },
+  location: {
+    type: String,
+    required: [true, 'Location is required'],
+    trim: true,
+    maxlength: 100
+  },
+  description: {
+    type: String,
+    required: [true, 'Job description is required'],
+    maxlength: 1000
+  },
+  status: {
+    type: String,
+    enum: ['active', 'review', 'closed'],
+    default: 'active',
+    index: true
+  },
+  createdBy: {
+    type: mongoose.Types.ObjectId,
+    ref: 'User',
+    required: [true, 'Creator ID is required']
+  },
+  applicants: [ApplicationSchema]
+}, {
+  timestamps: true
+});
+
+module.exports = mongoose.model('Job', JobSchema);
