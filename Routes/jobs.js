@@ -8,19 +8,25 @@ const {
   getJob,
   createJob,
   deleteJob,
-  updateJob
+  updateJob,
+  getApplicants
 } = require('../Controllers/jobsCreator');
 
 const {
   getPublicJobs,
   applyForJob,
-  getApplicants
+  getMyApplication,
+  deleteMyApplication,
+  getAllMyApplications
 } = require('../Controllers/jobsApplier');
 
 // Job Management Routes (all require auth)
 router.route('/')
   .get(authmiddle, ...getAllMyJobs)
   .post(authmiddle, ...createJob);
+
+router.route('/myApplications')
+  .get(authmiddle, ...getAllMyApplications);
 
 router.get('/public', ...getPublicJobs);
 
@@ -36,5 +42,9 @@ router.route('/:id/apply')
 
 router.route('/:id/applicants')
   .get(authmiddle, ...getApplicants); // Requires auth to view applicants
+
+router.route('/:id/:applicationId')
+  .get(authmiddle, ...getMyApplication)
+  .delete(authmiddle, ...deleteMyApplication);
 
 module.exports = router;

@@ -18,7 +18,7 @@ const cacheKeys = {
 // Controller methods as middleware arrays
 const getAllMyJobs = [
   withCache(cacheKeys.userJobs, CACHE_TTL.USER_JOBS),
-  async (req, res) => {
+  async (req, res, next) => {
     const jobs = await Job.find({ createdBy: req.user.userId });
     res.json(jobs);
   }
@@ -26,7 +26,7 @@ const getAllMyJobs = [
 
 const getJob = [
   withCache(cacheKeys.singleJob, CACHE_TTL.SINGLE_JOB),
-  async (req, res) => {
+  async (req, res, next) => {
     const job = await Job.findOne({
       _id: req.params.id,
       createdBy: req.user.userId
@@ -37,18 +37,23 @@ const getJob = [
 ];
 
 const createJob = [
-  async (req, res) => {
+  async (req, res, next) => {
     const job = await Job.create({
       ...req.body,
       createdBy: req.user.userId
     });
-    res.status(201).json(job);
+    res.locals.newJob = job;
+    next();
   },
-  invalidateCache([cacheKeys.userJobs, cacheKeys.allSearches])
+  invalidateCache([cacheKeys.userJobs, cacheKeys.allSearches]),
+
+  (req, res) => {
+    res.status(201).json(res.locals.newJob);
+  }
 ];
 
 const updateJob = [  
-  async (req, res) => {
+  async (req, res, next) => {
     const job = await Job.findOneAndUpdate(
       { _id: req.params.id, createdBy: req.user.userId },
       req.body,
@@ -56,21 +61,47 @@ const updateJob = [
     );
     if (!job) return res.status(404).json({ error: 'Job not found' });
     res.locals.updatedData = job;
-    res.json(job);
+    next();
   },
-  updateCache(cacheKeys.singleJob, CACHE_TTL.SINGLE_JOB)
+  updateCache(cacheKeys.singleJob, CACHE_TTL.SINGLE_JOB),
+
+  invalidateCache([cacheKeys.userJobs, cacheKeys.allSearches]),
+
+  (req, res) => {
+    res.status(200).json(res.locals.updatedData);
+  }
 ];
 
 const deleteJob = [  
-  async (req, res) => {
+  async (req, res, next) => {
     const job = await Job.findOneAndDelete({
       _id: req.params.id,
       createdBy: req.user.userId
     });
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json({ success: true });
+    res.locals.deletedData = job;
+    next();
   },
-  invalidateCache([cacheKeys.userJobs, cacheKeys.singleJob, cacheKeys.allSearches])
+  invalidateCache([cacheKeys.userJobs, cacheKeys.singleJob, cacheKeys.allSearches]),
+
+  (req, res) => {
+    if (!res.locals.deletedData) return res.status(404).json({ error: 'Job not found' });    
+    res.status(200).json({ success: true });
+  }
 ];
 
-module.exports = { getAllMyJobs, getJob, createJob, deleteJob, updateJob };
+const getApplicants = [
+  async (req, res, next) => {
+    const job = await Job.findOne({
+      _id: req.params.id,
+      createdBy: req.user.userId
+    }).populate('applicants.userId', 'name email');
+
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    res.json({
+      count: job.applicants.length,
+      applicants: job.applicants
+    });
+  }
+];
+
+module.exports = { getAllMyJobs, getJob, createJob, deleteJob, updateJob, getApplicants};
